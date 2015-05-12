@@ -1,25 +1,58 @@
 ---
 title: "Coursera - Regression Models course - Course Project 1"
-subtitle: "regmods-courseproject-1"
 author: "Martin Cote"
-date: "May 6, 2015"
+date: "May 24, 2015"
 output: pdf_document
 ---
 
 # Executive Summary
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Using the "mtcars" dataset provided within the R environment, answering the following questions:
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+* Is an automatic or manual transmission better for MPG
+* Quantify the MPG difference between automatic and manual transmissions
+
+# Pre-Processing
+
+Loading libraries and data.
+
+```{r echo=FALSE}
+#library(dplyr)
+#library(tidyr)
+library(ggplot2)
+
+data(mtcars)
+#carsdata <- tbl_df(mtcars)
+```
+
+# Exploratory Data Analysis
+
+Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?  Using a plot to demonstrate the relation and the linear regression between the variables.
 
 ```{r echo=TRUE}
-summary(cars)
+# linear regression
+lm(mpg ~ am, data=mtcars)
+
+g <- ggplot(mtcars, aes(am, mpg)) +
+  geom_point(color = "steelblue", size=4, alpha=1/2) +
+  #geom_smooth(size=2, method="lm", formula=mtcars$mpg ~ mtcars$am) +
+  xlab("Transmission") +
+  ylab("Mile-Per-Gallon") +
+  labs(title="Relation between Transmission vs MPG") +
+  theme_bw()
+g
+
+t.test(mtcars$am, mtcars$mpg, paired=FALSE, var.equal=FALSE)
+
 ```
 
-You can also embed plots, for example:
+We observe the p-value of the Student's Test Distribution is far below 0.05 which indicates there is a strong relation between Transmission (i.e. 'am') and MPG (i.e. 'mpg').
 
-```{r, echo=FALSE}
-plot(cars)
+# Predictions and Correlation
+
+```{r echo=TRUE}
+cor(mtcars$mpg, mtcars$am)
+var(mtcars$mpg, mtcars$am)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
