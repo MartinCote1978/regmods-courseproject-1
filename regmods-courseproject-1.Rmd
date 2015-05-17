@@ -30,9 +30,6 @@ data(mtcars)
 Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?  Using a plot to demonstrate the relation and the linear regression between the variables.
 
 ```{r echo=TRUE}
-# linear regression
-lm(mpg ~ am, data=mtcars)
-
 g <- ggplot(mtcars, aes(am, mpg)) +
   geom_point(color = "steelblue", size=4, alpha=1/2) +
   #geom_smooth(size=2, method="lm", formula=mtcars$mpg ~ mtcars$am) +
@@ -54,5 +51,47 @@ We observe the p-value of the Student's Test Distribution is far below 0.05 whic
 cor(mtcars$mpg, mtcars$am)
 var(mtcars$mpg, mtcars$am)
 
+# linear regression
+fit <- lm(mpg ~ am, data = mtcars)
+summary(fit)
+
+sumCoef <- summary(fit)$coefficients
+sumCoef[2,1] + c(-1, 1) * qt(.975, df = fit$df) * sumCoef[2, 2]
+
+#fit <- lm(mpg ~ am -1, data = mtcars)
+#summary(fit)
 ```
 
+Regression Model...
+
+```{r echo=TRUE}
+g = ggplot(data = mtcars, aes(x = am, y = mpg)) +
+  geom_smooth(method = "lm", colour = "black") + # linear model regression
+  geom_point(size = 7, colour = "black", alpha = 0.4) + # black contour
+  geom_point(size = 5, colour = "red", alpha = 0.4) + # red center
+  xlab("Transmission") +
+  ylab("Residual") +
+  labs(title="Regression Model") +
+  theme_bw()
+g
+```
+
+
+Studying the residual plot...
+
+```{r echo=TRUE}
+g = ggplot(data = mtcars, aes(x = am, y = resid(lm(mpg ~ am))) ) +
+  geom_hline(yintercept = 0, size = 2) +
+  geom_point(size = 7, colour = "black", alpha = 0.4) + # black contour
+  geom_point(size = 5, colour = "red", alpha = 0.4) + # red center
+  xlab("Transmission") +
+  ylab("Residual") +
+  labs(title="Verifying variability within the residuals") +
+  theme_bw()
+g
+
+# Validaiting the residuals mean to be 0:
+mean(resid(lm(mpg ~ am, data = mtcars)))
+```
+
+The residual plot seems to indicate a greater variability in MPG for a car with *manual* transmission (most likely due to the driver's skills and habits?  Further investigation would be required).
