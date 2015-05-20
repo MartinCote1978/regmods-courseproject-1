@@ -14,15 +14,25 @@ Using the "mtcars" dataset provided within the R environment, answering the foll
 
 # Pre-Processing
 
-Loading libraries and data.
+Loading libraries (GGPLOT2 required);
+Loading the required data ("mtcars", provided with R); and
+Switching 'am' to a factor variable (for specific processing only).
+
+**Note: All pre-processing is hidden.**
 
 ```{r echo=FALSE}
-#library(dplyr)
-#library(tidyr)
 library(ggplot2)
-
 data(mtcars)
-#carsdata <- tbl_df(mtcars)
+
+# Understanding the data: (disabled for final report)
+#dim(mtcars)
+#names(mtcars)
+#sapply(mtcars, class)
+#head(mtcars, 10)
+
+# Converting 'am' to a factor variable:
+mtcars_f <- mtcars # backup
+mtcars_f$am <- factor(mtcars_f$am, levels=c(0, 1), labels=c("Automatic", "Manual"))
 ```
 
 # Exploratory Data Analysis
@@ -30,20 +40,28 @@ data(mtcars)
 Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?  Using a plot to demonstrate the relation and the linear regression between the variables.
 
 ```{r echo=TRUE}
-g <- ggplot(mtcars, aes(am, mpg)) +
-  geom_point(color = "steelblue", size=4, alpha=1/2) +
-  #geom_smooth(size=2, method="lm", formula=mtcars$mpg ~ mtcars$am) +
-  xlab("Transmission") +
-  ylab("Mile-Per-Gallon") +
-  labs(title="Relation between Transmission vs MPG") +
-  theme_bw()
-g
-
 t.test(mtcars$am, mtcars$mpg, paired=FALSE, var.equal=FALSE)
-
 ```
 
 We observe the p-value of the Student's Test Distribution is far below 0.05 which indicates there is a strong relation between Transmission (i.e. 'am') and MPG (i.e. 'mpg').
+
+```{r echo=TRUE}
+verInd <- c(1, 2, 3, 4, 5, 7, 10)
+pairs(mtcars, verInd = verInd)
+
+summary(lm(mpg ~ ., data = mtcars))
+summary(lm(mpg ~ . -1, data = mtcars))
+
+par(mfrow = c(2, 2))
+fit <- lm(mpg ~ ., data = mtcars) # ?influence.measures
+plot(fit)
+library(car)
+vif(fit)
+
+
+```
+
+No random variable are dropped, hence all of them adds information to the linear model.
 
 # Predictions and Correlation
 
@@ -52,14 +70,9 @@ cor(mtcars$mpg, mtcars$am)
 var(mtcars$mpg, mtcars$am)
 
 # linear regression
-fit <- lm(mpg ~ am, data = mtcars)
+fit <- lm(mpg ~ am, data = mtcars_f)
 summary(fit)
 
-sumCoef <- summary(fit)$coefficients
-sumCoef[2,1] + c(-1, 1) * qt(.975, df = fit$df) * sumCoef[2, 2]
-
-#fit <- lm(mpg ~ am -1, data = mtcars)
-#summary(fit)
 ```
 
 Regression Model...
@@ -67,11 +80,13 @@ Regression Model...
 ```{r echo=TRUE}
 g = ggplot(data = mtcars, aes(x = am, y = mpg)) +
   geom_smooth(method = "lm", colour = "black") + # linear model regression
+  scale_x_continuous(breaks = c(0, 1),
+                     name = "Transmission",
+                     labels = c("0" = "Automatic", "1" = "Manual")) +
   geom_point(size = 7, colour = "black", alpha = 0.4) + # black contour
   geom_point(size = 5, colour = "red", alpha = 0.4) + # red center
-  xlab("Transmission") +
-  ylab("Residual") +
-  labs(title="Regression Model") +
+  ylab("MPG") +
+  labs(title="Linear Regression Model") +
   theme_bw()
 g
 ```
@@ -80,7 +95,7 @@ g
 Studying the residual plot...
 
 ```{r echo=TRUE}
-g = ggplot(data = mtcars, aes(x = am, y = resid(lm(mpg ~ am))) ) +
+g = ggplot(data = mtcars_f, aes(x = am, y = resid(lm(mpg ~ am))) ) +
   geom_hline(yintercept = 0, size = 2) +
   geom_point(size = 7, colour = "black", alpha = 0.4) + # black contour
   geom_point(size = 5, colour = "red", alpha = 0.4) + # red center
@@ -89,9 +104,6 @@ g = ggplot(data = mtcars, aes(x = am, y = resid(lm(mpg ~ am))) ) +
   labs(title="Verifying variability within the residuals") +
   theme_bw()
 g
-
-# Validaiting the residuals mean to be 0:
-mean(resid(lm(mpg ~ am, data = mtcars)))
 ```
 
 The residual plot seems to indicate a greater variability in MPG for a car with *manual* transmission (most likely due to the driver's skills and habits?  Further investigation would be required).
