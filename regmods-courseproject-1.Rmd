@@ -38,17 +38,17 @@ mtcars_f$am <- factor(mtcars_f$am, levels=c(0, 1), labels=c("Automatic", "Manual
 
 # Exploratory Data Analysis
 
-## Validating the inference
+## Analysis: Validating the inference via plot
 
 Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?  Using first a plot to demonstrate the relation and validate if there are, if any, possible relation between the two random variables (refer to figure 1).
 
-## Validating the hypothesis using a Student **t-test**
+## Inference: Validating the hypothesis using a Student **t-test**
 
 ```{r echo=TRUE}
 t.test(mpg ~ am, data = mtcars_f, paired=FALSE, var.equal=FALSE)
 ```
 
-We observe the p-value of the **Student's Test Distribution** is far below 0.05 which indicates there is a solid relation between Transmission (i.e. 'am') and MPG (i.e. 'mpg').
+We observe the p-value of the **Student's Test Distribution** is far below 0.05 which indicates there is a solid relation between Transmission (i.e. 'am') and MPG (i.e. 'mpg'), giving a confidence interval of -11 to -3 MPG at 95% (i.e. a decrease).
 
 # Regression Models
 
@@ -58,67 +58,40 @@ First, we will validate the linear model between the two desired variables to st
 
 ```{r echo=TRUE}
 fit <- lm(mpg ~ am, data = mtcars_f)
-summary(fit)
+summary(fit)$coef # printing out only the coefficients
 ```
 
-As we can see, there is indeed a linear relationship (which we can be observed in figure 2 as well).  However, since the variable is not continuous, we investigate the residuals (via plot) and confirm that the variability is much greater for the manual transmission (see firgure 3).
+As we can see, there is indeed a linear relationship (which we can be observed in figure 2 as well).  However, to investigate the validity of this linear model, we investigate the residuals (via plot) and confirm that the variability is much greater for the manual transmission (see firgure 3), which could potentially further investigation required (see *selecting the linear model* section).
 
-## Selecting the models
+## Quantifying the differences
 
-Although we know that the transmission does have an impact on the MPG, we want to know if there are any other random variables part of the dataset that could influence (as much as, lower or higher) the MPG value observed.
-
-The first validation we perform is to confirm if any variables are dropped as par of the Variance Inflation Factors:
+Using the linear model (without intercept for quick validation), we can obtain the differences of the impacts on both:
 
 ```{r echo=TRUE}
-fit <- lm(mpg ~ ., data = mtcars) # Use ?influence.measures for more information
-vif(fit)
+fit.nointer <- lm(mpg ~ am - 1, data = mtcars_f)
+summary(fit.nointer)$coef # printing out only the coefficients
 ```
 
-No random variables from the dataset are dropped, hence all of them could potentially add information to the linear model and the model selected.
+On average, a manual car will provide a ~7 MPG difference avantage over an automatoic (~24 MPG versus ~17 MPG).
 
-Second, we validate the correlation for each variable and MPG as well as completing a first linear model with all variables included and no *intercept*.
+## Diagnostics
 
-```{r echo=TRUE}
-cor(mtcars$mpg, mtcars$am)
-cor(mtcars$mpg, mtcars$cyl)
-cor(mtcars$mpg, mtcars$disp)
-cor(mtcars$mpg, mtcars$hp)
-cor(mtcars$mpg, mtcars$drat)
-cor(mtcars$mpg, mtcars$wt)
-cor(mtcars$mpg, mtcars$qsec)
-cor(mtcars$mpg, mtcars$vs)
-cor(mtcars$mpg, mtcars$gear)
-cor(mtcars$mpg, mtcars$carb)
+Since data entry was performed by hand, we use the handy "leverage measures" to validate if any data is an outlier.  The test confirms that none of the *hatvalues* are too different (i.e. 2, 3 times greater than the mean - '0' means 'FALSE'):
 
-summary(lm(mpg ~ . -1, data = mtcars))
+```{r echo=FALSE}
+hv <- as.data.frame(hatvalues(fit))
+mn <-mean(hatvalues(fit))
+hv$warn <- ifelse(hv[, 'hatvalues(fit)'] >= (3*mn), TRUE, # check if greater/equal than 3*
+   ifelse(hv[, 'hatvalues(fit)'] >= (2*mn), TRUE, FALSE )) # check if greater/equal than 2*, other FALSE.
+
+sum(hv$warn)
 ```
-
-Since the correlation values vary from -1 to 1, 0 being the weakest correlation, along with the interpretation of the first linear model, we include the following random variables:
-
-* am (transmission)
-* cyl (number of cylinders)
-* disp (displacement)
-* hp (horsepower)
-* drat (rear axle ratio)
-* wt (weight)
-* vs (V/S)
-* carb (number of carburetors)
-
-The regression model then becomes:
-
-```{r echo=TRUE}
-fit.all <- lm(mpg ~ am + cyl + disp + hp + drat + wt + vs + carb, data = mtcars)
-summary(fit.all)
-```
-
-# Conclusion
-
 \pagebreak
 
 # Appendix
 
 ## Figure 1 - Exploratory Analysis (MPG by Transmission)
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height = 4, fig.width = 4}
 # Plot the MPG changes by the type of transmission
 ggplot(mtcars_f, aes(x=am, y=mpg)) +
   geom_point(color="black", size=5, alpha=1/2) +
@@ -131,7 +104,7 @@ ggplot(mtcars_f, aes(x=am, y=mpg)) +
 ```
 
 ## Figure 2 - Linear Regression Model for MPG by Transmission
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height = 4, fig.width = 4}
 ggplot(data = mtcars, aes(x = am, y = mpg)) +
   geom_smooth(method = "lm", colour = "black") + # linear model regression
   scale_x_continuous(breaks = c(0, 1),
@@ -145,7 +118,7 @@ ggplot(data = mtcars, aes(x = am, y = mpg)) +
 ```
 
 ## Figure 3 - Verifying variability within the residual
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height = 4, fig.width = 4}
 ggplot(data = mtcars_f, aes(x = am, y = resid(lm(mpg ~ am))) ) +
   geom_hline(yintercept = 0, size = 2) +
   geom_point(size = 5, colour = "black", alpha = 0.4) + # black contour
@@ -154,5 +127,11 @@ ggplot(data = mtcars_f, aes(x = am, y = resid(lm(mpg ~ am))) ) +
   ylab("Residual") +
   labs(title="Verifying variability within the residuals") +
   theme_bw()
+```
+
+## Figure 4 - Diagnostics
+```{r echo=FALSE, fig.height=4, fig.width=4}
+par(mfrow = c(2, 2))
+plot(fit)
 ```
 

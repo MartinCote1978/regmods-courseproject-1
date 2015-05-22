@@ -1,0 +1,50 @@
+## Left over...
+
+## Selecting the models
+
+Although we know that the transmission does have an impact on the MPG, we want to know if there are any other random variables part of the dataset that could influence (as much as, lower or higher) the MPG value observed.
+
+The first validation we perform is to confirm if any variables are dropped as par of the Variance Inflation Factors:
+  
+  ```{r echo=TRUE}
+fit <- lm(mpg ~ ., data = mtcars) # Use ?influence.measures for more information
+vif(fit)
+```
+
+No random variables from the dataset are dropped, hence all of them could potentially add information to the linear model and the model selected.
+
+Second, we validate the correlation for each variable and MPG as well as completing a first linear model with all variables included and no *intercept*.
+
+```{r echo=TRUE}
+cor(mtcars$mpg, mtcars$am)
+cor(mtcars$mpg, mtcars$cyl)
+cor(mtcars$mpg, mtcars$disp)
+cor(mtcars$mpg, mtcars$hp)
+cor(mtcars$mpg, mtcars$drat)
+cor(mtcars$mpg, mtcars$wt)
+cor(mtcars$mpg, mtcars$qsec)
+cor(mtcars$mpg, mtcars$vs)
+cor(mtcars$mpg, mtcars$gear)
+cor(mtcars$mpg, mtcars$carb)
+
+summary(lm(mpg ~ . -1, data = mtcars))
+```
+
+Since the correlation values vary from -1 to 1, 0 being the weakest correlation, along with the interpretation of the first linear model, we include the following random variables:
+  
+  * am (transmission)
+* cyl (number of cylinders)
+* disp (displacement)
+* hp (horsepower)
+* drat (rear axle ratio)
+* wt (weight)
+* vs (V/S)
+* carb (number of carburetors)
+
+The regression model then becomes:
+  
+  ```{r echo=TRUE}
+fit.all <- lm(mpg ~ am + cyl + disp + hp + drat + wt + vs + carb, data = mtcars)
+summary(fit.all)
+```
+
