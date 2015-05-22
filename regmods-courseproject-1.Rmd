@@ -3,11 +3,12 @@ title: "Coursera - Regression Models course - Course Project 1"
 author: "Martin Cote"
 date: "May 24, 2015"
 output: pdf_document
+fontsize: 7pt
+geometry: margin=1.5cm
 ---
 
 # Executive Summary
-
-The following report is part of the Regression Models course on Coursera.org.  Using the "mtcars" dataset (a standard dataset provided with R from the **Motor Trend** US magazine in 1974), we try to answer, using statistical regresssion models, the following questions:
+Using the "mtcars" dataset (a standard dataset provided with R), we try to answer, using statistical regresssion models, the following questions:
 
 * Is an automatic or manual transmission better for MPG
 * Quantify the MPG difference between automatic and manual transmissions
@@ -19,7 +20,6 @@ The following report is part of the Regression Models course on Coursera.org.  U
 * Cleaning the data (i.e. switching 'am' to a factor variable - for specific processing only).
 
 **Note: All pre-processing is hidden.**
-
 ```{r echo=FALSE}
 library(ggplot2)
 library(car)
@@ -37,47 +37,36 @@ mtcars_f$am <- factor(mtcars_f$am, levels=c(0, 1), labels=c("Automatic", "Manual
 ```
 
 # Exploratory Data Analysis
-
-## Analysis: Validating the inference via plot
-
-Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?  Using first a plot to demonstrate the relation and validate if there are, if any, possible relation between the two random variables (refer to figure 1).
+## Analysis: Is transmission (i.e. 'am', 0 = automatic and 1 = manual) a good predictor for the 'mpg'?
+Using first a plot to demonstrate the relation and validate if there are, if any, possible relation between the two random variables (refer to figure 1).
 
 ## Inference: Validating the hypothesis using a Student **t-test**
-
 ```{r echo=TRUE}
-t.test(mpg ~ am, data = mtcars_f, paired=FALSE, var.equal=FALSE)
+test <- t.test(mpg ~ am, data = mtcars_f, paired=FALSE, var.equal=FALSE)
+test$p.value
+test$conf.int
 ```
-
 We observe the p-value of the **Student's Test Distribution** is far below 0.05 which indicates there is a solid relation between Transmission (i.e. 'am') and MPG (i.e. 'mpg'), giving a confidence interval of -11 to -3 MPG at 95% (i.e. a decrease).
 
 # Regression Models
-
 ## Linear Model between Transmission and MPG
-
 First, we will validate the linear model between the two desired variables to study.
-
 ```{r echo=TRUE}
 fit <- lm(mpg ~ am, data = mtcars_f)
 summary(fit)$coef # printing out only the coefficients
 ```
-
 As we can see, there is indeed a linear relationship (which we can be observed in figure 2 as well).  However, to investigate the validity of this linear model, we investigate the residuals (via plot) and confirm that the variability is much greater for the manual transmission (see firgure 3), which could potentially further investigation required (see *selecting the linear model* section).
 
 ## Quantifying the differences
-
 Using the linear model (without intercept for quick validation), we can obtain the differences of the impacts on both:
-
 ```{r echo=TRUE}
 fit.nointer <- lm(mpg ~ am - 1, data = mtcars_f)
 summary(fit.nointer)$coef # printing out only the coefficients
 ```
-
 On average, a manual car will provide a ~7 MPG difference avantage over an automatoic (~24 MPG versus ~17 MPG).
 
 ## Diagnostics
-
 Since data entry was performed by hand, we use the handy "leverage measures" to validate if any data is an outlier.  The test confirms that none of the *hatvalues* are too different (i.e. 2, 3 times greater than the mean - '0' means 'FALSE'):
-
 ```{r echo=FALSE}
 hv <- as.data.frame(hatvalues(fit))
 mn <-mean(hatvalues(fit))
@@ -86,6 +75,18 @@ hv$warn <- ifelse(hv[, 'hatvalues(fit)'] >= (3*mn), TRUE, # check if greater/equ
 
 sum(hv$warn)
 ```
+
+## Further investigations: selecting models
+Since the residual investigation confirmed that other variables might be at play, it is suggested to look at other models.  Looking at all variables within a linear model, we can see that 'qsec' and 'wt' seems to have an impact (**note**: hidden for quicker read and brief).
+```{r echo=FALSE, message=FALSE}
+#summary(lm(mpg ~ . -1, data = mtcars))$coef
+```
+Since these variables have an impact, we then study a second regression model:
+```{r echo=TRUE}
+summary(lm(mpg ~ am + wt + qsec, data = mtcars))$coef
+```
+As we can observe from the coefficients, 'wt' (the weight) seems to have a greater impact overall although all of them have a solid relation using the p-values calculated.
+
 \pagebreak
 
 # Appendix
